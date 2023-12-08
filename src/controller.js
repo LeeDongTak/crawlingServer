@@ -34,10 +34,10 @@ exports.crawling = async function (req, res) {
       return el.textContent;
     }
   );
-  
+
   //   매뉴
   let menuData = [];
-  let menuEh = (await page).$$("ul.list_menu > li[data-page='1'");
+  let menuEh = (await page).$$("ul.list_menu > li[data-page='1']");
   for (eh of await menuEh) {
     let menuTitle = (await eh).$eval("span.loss_word", (el) => {
       return el.textContent;
