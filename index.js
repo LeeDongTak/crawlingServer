@@ -4,12 +4,9 @@ const {router} = require("./src/router.js")
 
 const express = require('express');
 const app = express()
-const port = 4000
+const port = 3000
 
 // express 미들웨어 설정
-
-// 정적 파일 제공
-app.use(express.static("front"));
 
 // cors 설정
 app.use(cors());
