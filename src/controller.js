@@ -3,7 +3,11 @@ const puppeteer = require("puppeteer");
 exports.crawling = async function (req, res) {
   const { id } = req.params;
   let data = {};
-  let browser = puppeteer.launch({ headless: true, slowMo: 10 });
+  let browser = await puppeteer.launch({
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    slowMo: 10,
+  });
+  // let browser = puppeteer.launch({ headless: true,  });
   let page = (await browser).newPage();
   await Promise.all([
     (await page).goto(`https://place.map.kakao.com/${id}`),
