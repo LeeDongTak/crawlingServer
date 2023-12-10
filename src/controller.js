@@ -6,53 +6,52 @@ exports.crawling = async function (req, res) {
   let browser;
 
   try {
+    // Puppeteer 브라우저 실행
     browser = await puppeteer.launch({
       args: ["--no-sandbox", "--disable-setuid-sandbox"],
       slowMo: 10,
     });
 
+    // 새로운 페이지 생성
     const page = await browser.newPage();
-    await page.setRequestInterception(true);
 
-    page.on("request", (req) => {
-      if (["stylesheet", "font", "image"].includes(req.resourceType())) {
-        req.abort();
-      } else {
-        req.continue();
-      }
-    });
+    try {
+      // 페이지 이동 및 대기 시간 최적화
+      console.log("Debug: Starting page navigation");
+      await page.goto(`https://place.map.kakao.com/${id}`, { waitUntil: 'domcontentloaded' });
+      console.log("Debug: Page navigation successful");
 
-    await page.goto(`https://place.map.kakao.com/${id}`);
-    
-    // Extracting data...
-    data.bannerImg = await page.$eval(
-      "div.details_present > a.link_present span.bg_present",
-      (el) => el.style.backgroundImage
-    );
+      // 요소 선택 및 데이터 추출 병렬 처리
+      const [bannerImg, StarPoint, businessHours, menuData] = await Promise.all([
+        page.$eval('div.details_present > a.link_present span.bg_present', (el) => el.style.backgroundImage),
+        page.$eval('div.location_evaluation > a.link_evaluation span.color_b', (el) => el.textContent),
+        page.$eval('div.placeinfo_default > div.location_detail > div.location_present > div.displayPeriodList > ul.list_operation li > span.txt_operation', (el) => el.textContent),
+        page.$$eval('ul.list_menu > li[data-page="1"]', (elements) => {
+          return elements.map((el) => ({
+            menuTitle: el.querySelector('span.loss_word').textContent,
+            menuPrice: el.querySelector('em.price_menu').textContent,
+          }));
+        }),
+      ]);
 
-    data.StarPoint = await page.$eval(
-      "div.location_evaluation > a.link_evaluation span.color_b",
-      (el) => el.textContent
-    );
+      // 데이터 저장
+      data.bannerImg = bannerImg;
+      data.StarPoint = StarPoint;
+      data.businessHours = businessHours;
+      data.menuData = menuData;
+    } catch (error) {
+      // 디버깅을 위한 에러 출력
+      console.error("Error during page navigation or data extraction:", error.message);
+      throw error;
+    } finally {
+      // 페이지 닫기
+      await page.close();
+    }
 
-    data.businessHours = await page.$eval(
-      "div.placeinfo_default > div.location_detail > div.location_present > div.displayPeriodList > ul.list_operation li > span.txt_operation",
-      (el) => el.textContent
-    );
-
-    data.menuData = await page.$$eval(
-      "ul.list_menu > li[data-page='1']",
-      (elements) => {
-        return elements.map((el) => ({
-          menuTitle: el.querySelector("span.loss_word").textContent,
-          menuPrice: el.querySelector("em.price_menu").textContent,
-        }));
-      }
-    );
-
+    // 브라우저 닫기
     await browser.close();
 
-    if (Object.keys(data).length === 0) {
+    if (!Object.keys(data).length) {
       return res.send({
         isSuccess: false,
         code: 400,
@@ -67,7 +66,8 @@ exports.crawling = async function (req, res) {
       message: "크롤링 성공",
     });
   } catch (error) {
-    console.error("웹 스크래핑 중 오류:", error.message);
+    // 브라우저 닫기 및 에러 응답
+    console.error("Error occurred:", error.message);
     if (browser) await browser.close();
     return res.send({
       isSuccess: false,
