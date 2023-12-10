@@ -28,17 +28,17 @@ exports.crawling = async function (req, res) {
         page.$eval('div.placeinfo_default > div.location_detail > div.location_present > div.displayPeriodList > ul.list_operation li > span.txt_operation', (el) => el.textContent),
         page.$$eval('ul.list_menu > li[data-page="1"]', (elements) => {
           return elements.map((el) => ({
-            menuTitle: el.querySelector('span.loss_word').textContent,
-            menuPrice: el.querySelector('em.price_menu').textContent,
+            name: el.querySelector('span.loss_word').textContent,
+            price: el.querySelector('em.price_menu').textContent,
           }));
         }),
       ]);
 
       // 데이터 저장
       data.bannerImg = bannerImg;
-      data.StarPoint = StarPoint;
+      data.vote = StarPoint;
       data.businessHours = businessHours;
-      data.menuData = menuData;
+      data.menus = menuData;
     } catch (error) {
       // 디버깅을 위한 에러 출력
       console.error("Error during page navigation or data extraction:", error.message);
