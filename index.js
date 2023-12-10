@@ -4,7 +4,7 @@ const {router} = require("./src/router.js")
 
 const express = require('express');
 const app = express()
-const port = 8080
+const port = 3000
 
 // express 미들웨어 설정
 
